@@ -1,0 +1,58 @@
+@import "tailwindcss";
+@plugin "daisyui";
+*{
+    user-select: none;
+}
+
+.sidebar-z-index{
+    z-index: 1;
+}
+.profle-z-index{
+    z-index: 0;
+}
+
+/* Tooltip text */
+.tooltip-text {
+    visibility: hidden;
+    position: absolute;
+    bottom: 100%;
+    /* Position above the icon */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.75);
+    color: white;
+    text-align: center;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.relative:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    .print-area,
+    .print-area * {
+        visibility: visible;
+    }
+
+    .print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+}
