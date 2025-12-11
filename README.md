@@ -38,6 +38,10 @@ It includes customer management, product stock tracking, invoice generation, and
 
 
 ---
+##⚠️ Note: Backend is hosted on a free Render tier.  
+##It may take more than 60 seconds to wake up after inactivity.
+
+---
 
 ## ⚙️ Environment variables (examples)
 
