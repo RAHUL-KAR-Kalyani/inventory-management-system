@@ -187,7 +187,7 @@ const PrintInvoice = () => {
 
                     {/* Footer */}
                     <div className="border-t px-6 sm:px-8 py-4 flex flex-col sm:flex-row gap-3 justify-between items-center text-xs text-gray-500">
-                        <p>Payment due within 7 days.</p>
+                        <p>Payment must clear within 7 days.</p>
                         <span className="px-3 py-1 rounded-full border text-[11px] uppercase tracking-wider">
                             Thank You
                         </span>
