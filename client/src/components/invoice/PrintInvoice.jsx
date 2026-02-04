@@ -1,15 +1,64 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
+import axios from 'axios'
+import { useParams, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 export const printInvoiceHandler = (e) => {
     e.preventDefault();
     window.print();
 };
 
-
 const PrintInvoice = () => {
     useEffect(() => {
         document.title = "Print Invoice";
     }, []);
+
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const [invoice, setInvoice] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchInvoice = async () => {
+            setLoading(true);
+            try {
+                const res = await axios.get(`${import.meta.env.VITE_INVOICE_ENDPOINT}/get-invoicebyid/${id}`, { withCredentials: true });
+                if (res.data.success) {
+                    setInvoice(res.data.invoice);
+                } else {
+                    toast.error(res.data.message || 'Invoice not found');
+                    navigate('/invoices');
+                }
+            } catch (err) {
+                console.error(err);
+                toast.error(err.response?.data?.message || 'Failed to load invoice');
+                navigate('/invoices');
+            }
+            setLoading(false);
+        }
+        if (id) fetchInvoice();
+    }, [id, navigate]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <p>Loading invoice...</p>
+            </div>
+        )
+    }
+
+    if (!invoice) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <p>Invoice not available.</p>
+            </div>
+        )
+    }
+
+    const { customer, items, subtotal, cgst, sgst, gstTotal, discount, grandTotal, paymentMethod, paymentStatus, createdAt } = invoice;
+
+    const formattedDate = createdAt ? new Date(createdAt).toLocaleString() : '';
+
     return (
         <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 sm:p-10 ">
             <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden print-area">
@@ -18,9 +67,10 @@ const PrintInvoice = () => {
                     <div className="bg-linear-to-r from-blue-700 to-blue-500 text-white p-6 sm:p-8 flex flex-col sm:flex-row justify-between gap-6">
                         <div>
                             <h1 className="text-2xl font-bold tracking-widest uppercase">
-                                YOUR SHOP
+                                { /* Use shop/company name if available from invoice or fallback */}
+                                MY SHOP
                             </h1>
-                            <p className="text-sm opacity-80 mt-1">Shop Address</p>
+                            <p className="text-sm opacity-80 mt-1">Kolkata</p>
                         </div>
 
                         <div className="text-sm space-y-1 sm:text-right">
@@ -28,8 +78,9 @@ const PrintInvoice = () => {
                                 <span className="h-2 w-2 bg-green-400 rounded-full"></span>
                                 Invoice
                             </span>
-                            <p>Invoice #: INV-0001</p>
-                            <p>Date: 03 Dec 2025</p>
+                            <p>Invoice #: {invoice._id}</p>
+                            <p>Date: {formattedDate}</p>
+                            <p className="text-xs">Payment: {paymentMethod} — <span className="font-medium">{paymentStatus}</span></p>
                         </div>
                     </div>
 
@@ -42,18 +93,19 @@ const PrintInvoice = () => {
                                 <p className="text-[11px] uppercase tracking-wider text-gray-500 font-semibold mb-2">
                                     Bill To
                                 </p>
-                                <p className="font-medium">Customer Name</p>
-                                <p className="text-sm text-gray-500">customer@email.com</p>
-                                <p className="text-sm text-gray-500">Customer Address</p>
+                                <p className="font-medium capitalize">{customer?.name}</p>
+                                {customer?.email && <p className="text-sm text-gray-500">{customer.email}</p>}
+                                {customer?.phone && <p className="text-sm text-gray-500">+91-{customer.phone}</p>}
+                                {customer?.address && <p className="text-sm text-gray-500">{customer.address}</p>}
                             </div>
 
                             <div className="flex-1">
                                 <p className="text-[11px] uppercase tracking-wider text-gray-500 font-semibold mb-2">
                                     From
                                 </p>
-                                <p className="font-medium">Your Company Name</p>
-                                <p className="text-sm text-gray-500">you@example.com</p>
-                                <p className="text-sm text-gray-500">Company Address</p>
+                                <p className="font-medium">My Company</p>
+                                <p className="text-sm text-gray-500">me@gmail.com</p>
+                                <p className="text-sm text-gray-500">Kolkata, West Bengal</p>
                             </div>
                         </div>
 
@@ -75,19 +127,18 @@ const PrintInvoice = () => {
                                     </thead>
 
                                     <tbody>
-                                        <tr className="border-t">
-                                            <td className="px-3 py-2">Product Name 1</td>
-                                            <td className="text-center px-3 py-2">2</td>
-                                            <td className="text-right px-3 py-2">500.00</td>
-                                            <td className="text-right px-3 py-2">1,000.00</td>
-                                        </tr>
-
-                                        <tr className="border-t bg-gray-50">
-                                            <td className="px-3 py-2">Product Name 2</td>
-                                            <td className="text-center px-3 py-2">1</td>
-                                            <td className="text-right px-3 py-2">750.00</td>
-                                            <td className="text-right px-3 py-2">750.00</td>
-                                        </tr>
+                                        {items && items.length > 0 ? items.map((it, idx) => (
+                                            <tr key={idx} className="border-t border-gray-200 print:border-gray-200">
+                                                <td className="px-3 py-2">{it.product?.name}</td>
+                                                <td className="text-center px-3 py-2">{it.quantity}</td>
+                                                <td className="text-right px-3 py-2">{Number(it.price).toFixed(2)}</td>
+                                                <td className="text-right px-3 py-2">{Number(it.lineTotal).toFixed(2)}</td>
+                                            </tr>
+                                        )) : (
+                                            <tr className="border-t print:border-gray-300">
+                                                <td className="px-3 py-2" colSpan={4}>No items</td>
+                                            </tr>
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -95,35 +146,40 @@ const PrintInvoice = () => {
 
                         {/* Totals */}
                         <div className="flex justify-end">
-                            <div className="w-full sm:w-[280px] bg-gray-50 p-4 rounded-xl space-y-2 text-sm">
+                            <div className="w-full sm:w-70 bg-gray-50 p-4 rounded-xl space-y-2 text-sm">
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">Subtotal</span>
-                                    <span>1,750.00</span>
+                                    <span>{Number(subtotal).toFixed(2)}</span>
                                 </div>
 
                                 <div className="flex justify-between">
-                                    <span className="text-gray-500">CGST (9%)</span>
-                                    <span>315.00</span>
+                                    <span className="text-gray-500">GST Total ({gstTotal}%)</span>
+                                    <span>{(((subtotal) * (Number(gstTotal)) / 100)).toFixed(2)}</span>
                                 </div>
 
                                 <div className="flex justify-between">
-                                    <span className="text-gray-500">SGST (9%)</span>
-                                    <span>315.00</span>
+                                    <span className="text-gray-500">CGST ({cgst}%)</span>
+                                    <span>{((subtotal) * (Number(cgst)) / 100).toFixed(2)}</span>
                                 </div>
 
                                 <div className="flex justify-between">
-                                    <span className="text-gray-500">GST Total (18%)</span>
-                                    <span>315.00</span>
+                                    <span className="text-gray-500">SGST ({sgst}%)</span>
+                                    <span>{((subtotal) * (Number(sgst)) / 100).toFixed(2)}</span>
                                 </div>
+
+                                {/* <div className="flex justify-between">
+                                    <span className="text-gray-500">GST Total ({gstTotal}%)</span>
+                                    <span>{(((subtotal) * (Number(gstTotal)) / 100)).toFixed(2)}</span>
+                                </div> */}
 
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">Discount</span>
-                                    <span>-65.00</span>
+                                    <span>{Number(discount).toFixed(2)}</span>
                                 </div>
 
                                 <div className="flex justify-between pt-3 border-t border-dashed font-bold text-base">
                                     <span>Grand Total</span>
-                                    <span>2,000.00</span>
+                                    <span>{Number(grandTotal).toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>
@@ -136,7 +192,10 @@ const PrintInvoice = () => {
                             Thank You
                         </span>
                     </div>
-                    <button className='no-print' type='submit'>print</button>
+                    <div className="p-6">
+                        <button className='no-print px-4 py-2 bg-blue-600 text-white rounded' type='submit'>Print</button>
+                        <button type='button' className='no-print ml-2 px-4 py-2 bg-gray-500 text-white rounded' onClick={() => navigate('/invoices')}>Back</button>
+                    </div>
                 </form>
             </div>
         </div>
