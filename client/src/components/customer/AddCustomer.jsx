@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import axios from 'axios';
 import { addCustomer } from '../../redux/customersSlice';
@@ -70,7 +70,7 @@ const AddCustomer = () => {
         <div className="flex justify-center items-center min-h-screen bg-gray-100">
             <form onSubmit={submitHandler} className="bg-white p-6 rounded-lg shadow-lg w-full sm:w-96" >
                 <h2 className="text-2xl font-semibold mb-4 text-center">
-                    Add Product
+                    Add Customer
                 </h2>
 
                 {message && (
